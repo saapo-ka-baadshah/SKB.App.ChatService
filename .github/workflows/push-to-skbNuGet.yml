@@ -1,0 +1,63 @@
+name: "Push Class Library to github.NuGet"
+
+on:
+  push:
+    branches:
+      - main
+
+#| Variables                 | Values                        |
+#|---------------------------|-------------------------------|
+#| NAMESPACE                 | If not gh org, then gh username|
+#| USERNAME                  | gh username for the packages  |
+#| NUGET_SRC_KEY             | By what name nuget source identifies |
+#| MAJOR_VERSION             | Incremented with non-reversible (incompatible) lib changes |
+#| MINOR_VERSION             | Incremneted with feature adds |
+#
+#| Secrets                   | Values                        |
+#|---------------------------|-------------------------------|
+#| GH_PATH                   | PAT with clearances for Package uploads|
+
+env:
+  PROJECT_NAME: ${{ github.event.repository.name }}
+  PKG_OUTPUT_DIR: ${{ github.workspace }}\bin
+  NUGET_SOURCE_URL: https://nuget.pkg.github.com/${{ vars.NAMESPACE }}/index.json
+  FULL_PACKAGE_CONTROL_PAT: ${{ secrets.GH_PAT }}
+  NUGET_OWNER_USERNAME: ${{ vars.USERNAME }}
+  VERSION_RELEASE_PREFIX: ${{ vars.MINOR_VERSION }}-preview
+  VERSION_STRING: ${{ vars.MAJOR_VERSION }}.${{ vars.VERSION_RELEASE_PREFIX }}.${{ github.run_number }}
+  NUGET_REGISTRY: ${{ vars.NUGET_SRC_KEY }}
+
+jobs:
+  build:
+    name: "[${{ github.event.repository.name }}] Build"
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        dotnet-version: [ '8.0.x' ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup dotnet ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+      # You can test your matrix by printing the current dotnet version
+      - name: Display dotnet version
+        run: dotnet --version
+
+      # Restore Dependencies
+      - name: Install dependencies
+        run: dotnet restore
+
+      # Dotnet Build
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      # Dotnet Pack
+      - name: Pack
+        run: dotnet pack --configuration Release --no-restore --no-build --output ${{ env.PKG_OUTPUT_DIR }} /p:Version=${{ env.VERSION_STRING }}
+
+      # Publish Dotnet package to NuGet
+      - name: Publish
+        run: |
+          dotnet nuget push "${{ env.PKG_OUTPUT_DIR }}\*.nupkg" --api-key ${{ env.FULL_PACKAGE_CONTROL_PAT }} --source ${{ env.NUGET_REGISTRY }} --skip-duplicate
