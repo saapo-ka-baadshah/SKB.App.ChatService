@@ -23,8 +23,7 @@ env:
   NUGET_SOURCE_URL: https://nuget.pkg.github.com/${{ vars.NAMESPACE }}/index.json
   FULL_PACKAGE_CONTROL_PAT: ${{ secrets.GH_PAT }}
   NUGET_OWNER_USERNAME: ${{ vars.USERNAME }}
-  VERSION_RELEASE_PREFIX: ${{ vars.MINOR_VERSION }}-preview
-  VERSION_STRING: ${{ vars.MAJOR_VERSION }}.${{ vars.VERSION_RELEASE_PREFIX }}.${{ github.run_number }}
+  VERSION_STRING: ${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.0-preview.${{ github.run_number }}
   NUGET_REGISTRY: ${{ vars.NUGET_SRC_KEY }}
 
 jobs:
