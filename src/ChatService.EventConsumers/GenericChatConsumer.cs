@@ -29,13 +29,13 @@ public class GenericChatConsumer: IConsumer<GenericChatEvent>
 	/// <param name="options">Injected Options</param>
 	public GenericChatConsumer(
 		IChatClient chatClient,
-		IList<McpClientTool> mcpClientTools,
+		IList<McpClientTool>? mcpClientTools,
 		ILogger<GenericChatConsumer> logger,
 		IOptions<PromptOptions> options)
 	{
 		_logger = logger;
 		_chatClient = chatClient;
-		_mcpClientTools = mcpClientTools;
+		_mcpClientTools = mcpClientTools ?? new List<McpClientTool>();
 		_promptOptions = options.Value;
 	}
 

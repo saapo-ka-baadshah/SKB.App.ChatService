@@ -62,39 +62,38 @@ public static class AiExtensions
 		if (clientTransportOptions == null)
 		{
 			logger
-				.LogCritical(
+				.LogWarning(
 					"AI Services need a running MCP server! Options for the MCP server transport not provided.");
-			throw new Exception("SseClientTransportOptions is null");
+			logger
+				.LogInformation(
+					"Skipping: Integration of MCP server. [Reason: Transport option not provided.]");
 		}
-
-		try
+		else
 		{
-			var mcpClient = RetryPolicy
-				.CountLimitedRetryPolicy<HttpRequestException>()
-				.Execute(
-					() =>
-					{
-						return McpClientFactory.CreateAsync(
-							new SseClientTransport(clientTransportOptions)
-						).GetAwaiter().GetResult();
-					});
-
-			services.AddSingleton<IMcpClient>(_ => mcpClient);
 			try
 			{
-				services.AddSingleton(mcpClient.ListToolsAsync().GetAwaiter().GetResult());
+				var mcpClient = RetryPolicy
+					.CountLimitedRetryPolicy<HttpRequestException>()
+					.Execute(() => McpClientFactory.CreateAsync(
+						new SseClientTransport(clientTransportOptions)
+					).GetAwaiter().GetResult());
+
+				services.AddSingleton<IMcpClient>(_ => mcpClient);
+				try
+				{
+					services.AddSingleton(mcpClient.ListToolsAsync().GetAwaiter().GetResult());
+				}
+				catch (Exception e)
+				{
+					logger.LogError("Failure in loading MCP tools list. {error}", e);
+					services.AddSingleton<IList<McpClientTool>>(_ => new List<McpClientTool>());
+				}
 			}
 			catch (Exception e)
 			{
-				logger.LogError("Failure in loading MCP tools list. {error}", e);
-				services.AddSingleton<IList<McpClientTool>>(_ => new List<McpClientTool>());
+				logger.LogError("Failed to connect to the MCP SSE server. ({ErrorMessage})", e.Message);
 			}
 		}
-		catch (Exception e)
-		{
-			logger.LogError("Failed to connect to the MCP SSE server. ({ErrorMessage})", e.Message);
-		}
-
 
 		return services;
 	}
