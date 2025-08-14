@@ -40,6 +40,23 @@ public class GenericChatConsumer: IConsumer<GenericChatEvent>
 	}
 
 	/// <summary>
+	/// Consumes a generic chat event. Alternate constructor for non MCP server injections
+	/// </summary>
+	/// <param name="chatClient">AI chat client.</param>
+	/// <param name="logger">Injected logger</param>
+	/// <param name="options">Injected Options</param>
+	public GenericChatConsumer(
+		IChatClient chatClient,
+		ILogger<GenericChatConsumer> logger,
+		IOptions<PromptOptions> options)
+	{
+		_logger = logger;
+		_chatClient = chatClient;
+		_mcpClientTools = new List<McpClientTool>();
+		_promptOptions = options.Value;
+	}
+
+	/// <summary>
 	/// Consume the event of implementation for IChat
 	/// </summary>
 	/// <param name="context">MassTransit consumer context</param>
